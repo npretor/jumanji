@@ -3,12 +3,17 @@
 * Add new moves (up, down), (left, right), (zup, zdown) # Z down decrements the layer count, zup increments it. Start at layer 0 
 
 
+# TODO 
+# FIXME 
+# BUG 
+# NOTE
+
 * constants (TODO) 
 
-* types 
-    - (TODO) Agent
-    - (TODO) State 
-    - (TODO) Observation 
+* types (DONE)
+    - (DONE) Agent
+    - (DONE) State 
+    - (DONE) Observation 
 
 * utils
     - (TODO) get_path
@@ -48,7 +53,7 @@
     - (TODO) animate
     - (TODO) observation_spec 
     - (TODO) action_spec    
-      
+
 * env_tests
     - (TODO) is_head_on_grid
     - (TODO) is_target_on_grid
@@ -64,14 +69,13 @@
     - (TODO) test_connector__specs_does_not_smoke
     - (TODO) test_connector__get_action_mask
     - (TODO) test_connector__get_extras
+
 * conf_tests 
     - (TODO) grid
     - (TODO) state1
     - (TODO) state2
     - (TODO) action1
     - (TODO) action2
-
-
 
 * generator_test 
     - (TODO) valid_starting_grid
