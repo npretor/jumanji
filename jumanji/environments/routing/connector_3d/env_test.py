@@ -21,7 +21,7 @@ import jax.numpy as jnp
 import jumanji.testing.pytrees
 from jumanji.environments.routing.connector_3d import constants
 from jumanji.environments.routing.connector_3d.constants import EMPTY
-from jumanji.environments.routing.connector_3d.env import Connector
+from jumanji.environments.routing.connector_3d.env import Connector_3D
 from jumanji.environments.routing.connector_3d.types import Agent, State
 from jumanji.environments.routing.connector_3d.utils import get_position, get_target
 from jumanji.testing.env_not_smoke import (
@@ -44,7 +44,7 @@ def is_target_on_grid(agent: Agent, grid: chex.Array) -> chex.Array:
     return jnp.any(grid[agent.target] == get_target(agent.id))
 
 
-def test_connector__reset(connector: Connector, key: jax.random.PRNGKey) -> None:
+def test_connector__reset(connector: Connector_3D, key: jax.random.PRNGKey) -> None:
     """Test that all heads and targets are on the board."""
     state, timestep = connector.reset(key)
 
@@ -64,7 +64,7 @@ def test_connector__reset(connector: Connector, key: jax.random.PRNGKey) -> None
     assert timestep.step_type == StepType.FIRST
 
 
-def test_connector__reset_jit(connector: Connector) -> None:
+def test_connector__reset_jit(connector: Connector_3D) -> None:
     """Confirm that the reset is only compiled once when jitted."""
     chex.clear_trace_counter()
     reset_fn = jax.jit(chex.assert_max_traces(connector.reset, n=1))
@@ -78,7 +78,7 @@ def test_connector__reset_jit(connector: Connector) -> None:
 
 
 def test_connector__step_connected(
-    connector: Connector,
+    connector: Connector_3D,
     state: State,
     state1: State,
     state2: State,
@@ -106,7 +106,7 @@ def test_connector__step_connected(
 
 
 def test_connector__step_blocked(
-    connector: Connector,
+    connector: Connector_3D,
     state: State,
     path0: int,
     path1: int,
@@ -154,7 +154,7 @@ def test_connector__step_blocked(
     assert all(is_target_on_grid(state.agents, state.grid))
 
 
-def test_connector__step_horizon(connector: Connector, state: State) -> None:
+def test_connector__step_horizon(connector: Connector_3D, state: State) -> None:
     """Tests that the timestep is done, but discounts are not all 0 past"""
     step_fn = jax.jit(connector.step)
     # The environment has a time limit of 5.
@@ -176,7 +176,7 @@ def test_connector__step_horizon(connector: Connector, state: State) -> None:
 
 
 def test_connector__step_agents_collision(
-    connector: Connector,
+    connector: Connector_3D,
     state: State,
     path0: int,
     path1: int,
@@ -208,7 +208,7 @@ def test_connector__step_agents_collision(
     assert all(is_head_on_grid(agents, grid))
 
 
-def test_connector__step_agent_valid(connector: Connector, state: State) -> None:
+def test_connector__step_agent_valid(connector: Connector_3D, state: State) -> None:
     """Test _step_agent method given valid position."""
     agent0 = tree_slice(state.agents, 0)
     agent, grid = connector._step_agent(agent0, state.grid, constants.LEFT)
@@ -219,7 +219,7 @@ def test_connector__step_agent_valid(connector: Connector, state: State) -> None
     assert grid[1, 1] == get_position(0)
 
 
-def test_connector__step_agent_invalid(connector: Connector, state: State) -> None:
+def test_connector__step_agent_invalid(connector: Connector_3D, state: State) -> None:
     """Test _step_agent method given invalid position."""
     agent0 = tree_slice(state.agents, 0)
     agent, grid = connector._step_agent(agent0, state.grid, constants.RIGHT)
@@ -230,17 +230,17 @@ def test_connector__step_agent_invalid(connector: Connector, state: State) -> No
     assert grid[1, 2] == get_position(0)
 
 
-def test_connector__does_not_smoke(connector: Connector) -> None:
+def test_connector__does_not_smoke(connector: Connector_3D) -> None:
     """Test that we can run an episode without any errors."""
     check_env_does_not_smoke(connector)
 
 
-def test_connector__specs_does_not_smoke(connector: Connector) -> None:
+def test_connector__specs_does_not_smoke(connector: Connector_3D) -> None:
     """Test that we can access specs without any errors."""
     check_env_specs_does_not_smoke(connector)
 
 
-def test_connector__get_action_mask(state: State, connector: Connector) -> None:
+def test_connector__get_action_mask(state: State, connector: Connector_3D) -> None:
     """Validates the action masking."""
     action_masks = jax.vmap(connector._get_action_mask, (0, None))(
         state.agents, state.grid
@@ -255,7 +255,7 @@ def test_connector__get_action_mask(state: State, connector: Connector) -> None:
     assert jnp.array_equal(action_masks, expected_mask)
 
 
-def test_connector__get_extras(state: State, connector: Connector) -> None:
+def test_connector__get_extras(state: State, connector: Connector_3D) -> None:
     """Validates the `_get_extras` method to generates extras metrics."""
     extras = connector._get_extras(state)
     expected_keys = ["total_path_length", "ratio_connections", "num_connections"]

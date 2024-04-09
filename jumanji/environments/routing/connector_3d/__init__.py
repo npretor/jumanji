@@ -12,5 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from jumanji.environments.routing.connector.env import Connector
-from jumanji.environments.routing.connector.types import Observation, State
+from jumanji.environments.routing.connector_3d.env import Connector_3D
+from jumanji.environments.routing.connector_3d.types import Observation, State

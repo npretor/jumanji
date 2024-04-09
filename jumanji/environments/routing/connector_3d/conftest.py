@@ -18,7 +18,7 @@ import jax.numpy as jnp
 import pytest
 
 from jumanji.environments.routing.connector_3d.constants import EMPTY, LEFT, NOOP, UP
-from jumanji.environments.routing.connector_3d.env import Connector
+from jumanji.environments.routing.connector_3d.env import Connector_3D
 from jumanji.environments.routing.connector_3d.generator import UniformRandomGenerator
 from jumanji.environments.routing.connector_3d.types import Agent, State
 from jumanji.environments.routing.connector_3d.utils import (
@@ -190,9 +190,9 @@ def state2(
 
     agents = jax.vmap(Agent)(
         id=jnp.arange(3),
-        start=jnp.array([(1, 4), (5, 2), (4, 4)]),
-        target=jnp.array([(0, 2), (3, 0), (2, 3)]),
-        position=jnp.array([(0, 2), (3, 0), (2, 3)]),
+        start=jnp.array([(1, 4, 0), (5, 2, 0), (4, 4, 0)]),
+        target=jnp.array([(0, 2, 0), (3, 0, 0), (2, 3, 0)]),
+        position=jnp.array([(0, 2, 0), (3, 0, 0), (2, 3, 0)]),
     )
 
     return State(grid=grid, step_count=jnp.array(2, jnp.int32), agents=agents, key=key)
@@ -211,7 +211,7 @@ def action2() -> chex.Array:
 
 
 @pytest.fixture
-def connector() -> Connector:
+def connector() -> Connector_3D:
     """Returns a `Connector` environment of size 6 with 3 agents and a time limit of 5."""
     uniform_random_generator = UniformRandomGenerator(grid_size=6, num_agents=3)
-    return Connector(uniform_random_generator, time_limit=5)
+    return Connector_3D(uniform_random_generator, time_limit=5)

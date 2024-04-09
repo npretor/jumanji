@@ -37,6 +37,7 @@ from jumanji.environments.packing.tetris.env import Tetris
 from jumanji.environments.routing import (
     cleaner,
     connector,
+    connector_3d,
     cvrp,
     maze,
     mmst,
@@ -49,6 +50,7 @@ from jumanji.environments.routing import (
 )
 from jumanji.environments.routing.cleaner.env import Cleaner
 from jumanji.environments.routing.connector.env import Connector
+from jumanji.environments.routing.connector_3d.env import Connector_3D
 from jumanji.environments.routing.cvrp.env import CVRP
 from jumanji.environments.routing.maze.env import Maze
 from jumanji.environments.routing.mmst.env import MMST

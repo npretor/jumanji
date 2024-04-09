@@ -15,7 +15,7 @@
     - (DONE) State 
     - (DONE) Observation 
 
-* utils
+* utils (FIRST PASS COMPLETE)
     - (TODO) get_path
     - (TODO) get_position
     - (TODO) get_target
@@ -31,7 +31,7 @@
     - (TODO) get_correction_mask
 
 
-* utils_test 
+* utils_test (FIRST PASS COMPLETE)
     - (TODO) test_get_path
     - (TODO) test_get_head
     - (TODO) test_get_target
@@ -42,7 +42,7 @@
     - (TODO) test_connected_or_blocked
     - (TODO) test_get_agent_grid
 
-* env CONNECTOR (TODO) 
+* env CONNECTOR (FIRST PASS COMPLETE)
     - (TODO) reset 
     - (TODO) step
     - (TODO) _step_agents 
@@ -54,7 +54,7 @@
     - (TODO) observation_spec 
     - (TODO) action_spec    
 
-* env_tests
+* env_tests (FIRST PASS COMPLETE)
     - (TODO) is_head_on_grid
     - (TODO) is_target_on_grid
     - (TODO) test_connector__reset
@@ -78,6 +78,10 @@
     - (TODO) action2
 
 * generator_test 
+### Rewrite the generator to take a tuple (x,y,z), not a scalar
+    - ()
+
+    - (DONE) test_uniform_random_generator__call
     - (TODO) valid_starting_grid
     - (TODO) valid_starting_grid_after_1_step
     - (TODO) valid_starting_grid_initialize_agents
@@ -107,3 +111,9 @@
     - (TODO) test_dense_reward 
 
 * viewer (TODO) 
+
+
+
+## Notes 
+
+The grid creation is specified by (x, y, z), but is indexed by (z, y, x)

@@ -47,7 +47,7 @@ from jumanji.types import TimeStep, restart, termination, transition
 from jumanji.viewer import Viewer
 
 
-class Connector(Environment[State, specs.MultiDiscreteArray, Observation]):
+class Connector_3D(Environment[State, specs.MultiDiscreteArray, Observation]):
     """The `Connector` environment is a gridworld problem where multiple pairs of points (sets)
     must be connected without overlapping the paths taken by any other set. This is achieved
     by allowing certain points to move to an adjacent cell at each step. However, each time a
@@ -328,7 +328,7 @@ class Connector(Environment[State, specs.MultiDiscreteArray, Observation]):
 
         Returns:
             Spec for the `Observation` whose fields are:
-            - grid: BoundedArray (int32) of shape (grid_size, grid_size).
+            - grid: BoundedArray (int32) of shape (grid_size_x, grid_size_y, grid_size_z).
             - action_mask: BoundedArray (bool) of shape (num_agents, 5).
             - step_count: BoundedArray (int32) of shape ().
         """
