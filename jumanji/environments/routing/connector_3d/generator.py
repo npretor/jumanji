@@ -88,41 +88,54 @@ class UniformRandomGenerator(Generator):
     def __call__(self, key: chex.PRNGKey) -> State:
         """Generates a `Connector` state that contains the grid and the agents' layout.
 
+        1. Start with a linear array of length x*y*z.
+        2. Select locations on that array
+        3. Convert those locations to coordinates
+
+
         Returns:
             A `Connector` state.
         """
-        x,y,z = self.grid_size 
+        x, y, z = self.grid_size 
 
         key, pos_key = jax.random.split(key)
         starts_flat, targets_flat = jax.random.choice(
             key=pos_key,
             a=jnp.arange(x*y*z),         # a=jnp.arange(self.grid_size**2),
-            shape=(3, self.num_agents),  # Start and target positions for all agents
+            shape=(2, self.num_agents),  # Start and target positions for all agents
             replace=False,               # Start and target positions cannot overlap
         )
-
+        
         # Create 2D points from the flat arrays.
-        starts = jnp.divmod(starts_flat, self.grid_size)
-        targets = jnp.divmod(targets_flat, self.grid_size)
+        # starts = jnp.divmod(starts_flat, self.grid_size[0]) 
+        # targets = jnp.divmod(targets_flat, self.grid_size[0]) 
+
 
         # Get the agent values for starts and positions.
         agent_position_values = jax.vmap(get_position)(jnp.arange(self.num_agents))
         agent_target_values = jax.vmap(get_target)(jnp.arange(self.num_agents))
 
-        # Create empty grid.
-        grid = jnp.zeros((self.grid_size, self.grid_size), dtype=jnp.int32)
+        # Create empty array.
+        grid = jnp.zeros((x*y*z), dtype=jnp.int32)
 
         # Place the agent values at starts and targets.
-        grid = grid.at[starts].set(agent_position_values)
-        grid = grid.at[targets].set(agent_target_values)
+        grid = grid.at[starts_flat].set(agent_position_values)
+        grid = grid.at[targets_flat].set(agent_target_values)
 
-        # Create the agent pytree that corresponds to the grid.
+        # Reshape the array into a n-dim grid
+        grid = jnp.reshape(grid, (z, y, x))  # or (z, y, z)  
+
+        # Get the coordinates based on the 1D indices 
+        mapping_array = jnp.stack(jnp.unravel_index(jnp.arange(x*y*z), (z,y,x)), 1) 
+        starts = jnp.take(mapping_array, starts_flat, 0)
+        targets = jnp.take(mapping_array, targets_flat, 0)
+        
         agents = jax.vmap(Agent)(
             id=jnp.arange(self.num_agents),
-            start=jnp.stack(starts, axis=1),
-            target=jnp.stack(targets, axis=1),
-            position=jnp.stack(starts, axis=1),
-        )
+            start=starts,
+            target=targets,
+            position=starts,
+        )        
 
         step_count = jnp.array(0, jnp.int32)
 
@@ -169,7 +182,7 @@ class RandomWalkGenerator(Generator):
         Returns:
             Tuple containing solved board, the agents and an empty training board.
         """
-        grid = jnp.zeros((self.grid_size, self.grid_size), dtype=jnp.int32)
+        grid = jnp.zeros((self.grid_size[0], self.grid_size[1], self.grid_size[2]), dtype=jnp.int32)
         key, step_key = jax.random.split(key)
         grid, agents = self._initialize_agents(key, grid)
 
@@ -193,7 +206,7 @@ class RandomWalkGenerator(Generator):
         agent_position_values = get_position(jnp.arange(self.num_agents))
         agent_target_values = get_target(jnp.arange(self.num_agents))
         # Populate an empty grid with heads and targets
-        grid = jnp.zeros((self.grid_size, self.grid_size), dtype=jnp.int32)
+        grid = jnp.zeros((self.grid_size[0], self.grid_size[1], self.grid_size[2]), dtype=jnp.int32)
         grid = grid.at[tuple(agents.start.T)].set(agent_position_values)
         grid = grid.at[tuple(agents.target.T)].set(agent_target_values)
         return solved_grid, agents, grid
@@ -266,6 +279,7 @@ class RandomWalkGenerator(Generator):
             Tuple of grid with populated starting points and agents initialized with
             the same starting points.
         """
+        x, y, z = self.grid_size
         # Generate locations of heads and an adjacent first move for each agent.
         # Return a grid with these positions populated.
         carry, heads_and_positions = jax.lax.scan(
@@ -275,20 +289,24 @@ class RandomWalkGenerator(Generator):
         )
         starts_flat, first_move_flat = heads_and_positions
         key, grid = carry
-        grid = grid.reshape((self.grid_size, self.grid_size)).astype(jnp.int32)
+        grid = grid.reshape((z,y,x)).astype(jnp.int32)
 
         # Create 2D points from the flat arrays.
-        starts = jnp.divmod(starts_flat, self.grid_size)
-        first_step = jnp.divmod(first_move_flat, self.grid_size)
+        mapping_array = jnp.stack(jnp.unravel_index(jnp.arange(x*y*z), (z,y,x)), 1) 
+        starts = jnp.take(mapping_array, starts_flat, 0)
+        first_step = jnp.take(mapping_array, first_move_flat, 0)
+                
+        # starts = jnp.divmod(starts_flat, self.grid_size)
+        # first_step = jnp.divmod(first_move_flat, self.grid_size)
         # Fill target with default value as targets will be assigned after random walk
         targets = jnp.full((2, self.num_agents), -1)
 
         # # Initialize agents
         agents = jax.vmap(Agent)(
             id=jnp.arange(self.num_agents),
-            start=jnp.stack(starts, axis=1),
+            start=starts,
             target=jnp.stack(targets, axis=1),
-            position=jnp.stack(first_step, axis=1),
+            position=first_step,
         )
         return grid, agents
 
@@ -306,19 +324,24 @@ class RandomWalkGenerator(Generator):
         Returns:
             Tuple of indices of the starting position and the first move (in flat coordinates).
         """
+        x, y, z = self.grid_size
+
         key, flat_grid = carry
         key, next_key = jax.random.split(key)
         grid_mask = flat_grid == 0
         start_coordinate_flat = jax.random.choice(
             key=key,
-            a=jnp.arange(self.grid_size**2),
+            a=jnp.arange(x*y*z),
             shape=(),
             replace=True,
             p=grid_mask,
         )
         flat_grid = flat_grid.at[start_coordinate_flat].set(get_target(agent_id))
+
+        import ipdb; ipdb.set_trace()
+
         available_cells = self._available_cells(
-            flat_grid.reshape((self.grid_size, self.grid_size)), start_coordinate_flat
+            flat_grid.reshape((z,y,x)), start_coordinate_flat
         )
         first_move_coordinate_flat = jax.random.choice(
             key=key,
@@ -396,11 +419,13 @@ class RandomWalkGenerator(Generator):
         action_multiplier = jnp.array([UP, DOWN, LEFT, RIGHT, NOOP])
         actions = jnp.array(
             [
-                (action_tuple == jnp.array([-1, 0])).all(axis=0),
-                (action_tuple == jnp.array([1, 0])).all(axis=0),
-                (action_tuple == jnp.array([0, -1])).all(axis=0),
-                (action_tuple == jnp.array([0, 1])).all(axis=0),
-                (action_tuple == jnp.array([0, 0])).all(axis=0),
+                (action_tuple == jnp.array([-1, 0, 0])).all(axis=0),
+                (action_tuple == jnp.array([1, 0, 0])).all(axis=0),
+                (action_tuple == jnp.array([0, -1, 0])).all(axis=0),
+                (action_tuple == jnp.array([0, 1, 0])).all(axis=0),
+                (action_tuple == jnp.array([0, 0, -1])).all(axis=0),
+                (action_tuple == jnp.array([0, 0, 1])).all(axis=0),
+                (action_tuple == jnp.array([0, 0, 0])).all(axis=0),
             ]
         )
         actions = jnp.sum(actions * action_multiplier, axis=0)
@@ -419,19 +444,36 @@ class RandomWalkGenerator(Generator):
             A chex.Array of size 4 with the flat indices of adjacent cells
             (padded with -1's if less than 4 adjacent cells).
         """
-        available_moves = jnp.full(4, cell)
-        direction_operations = jnp.array([-1 * self.grid_size, self.grid_size, -1, 1])
+        
+        # jax.debug.print("🤯 {cell} 🤯", cell=cell)
+        # import ipdb; ipdb.set_trace()
+        """
+        # [cell, cell, cell, cell, cell, cell] 
+        # [-5, 5, -5, 5, -1, 1]
+        
+        """
+        x, y, z = self.grid_size
+
+        available_moves = jnp.full(6, cell) # [cell, cell, cell, cell, cell, cell] 
+        direction_operations = jnp.array([-1*x*y, x*y, -1*y, y, -1, 1])   # -z, +z, -y, +y, -x, +x
+
         # Create a mask to check 0 <= index < total size
         cells_to_check = available_moves + direction_operations
-        is_id_in_grid = cells_to_check < self.grid_size * self.grid_size
+        is_id_in_grid = cells_to_check < x*y*z
         is_id_positive = 0 <= cells_to_check
         mask = is_id_positive & is_id_in_grid
 
         # Ensure adjacent cells doesn't involve going off the grid
         unflatten_available = jnp.divmod(cells_to_check, self.grid_size)
         unflatten_current = jnp.divmod(cell, self.grid_size)
-        is_same_row = unflatten_available[0] == unflatten_current[0]
-        is_same_col = unflatten_available[1] == unflatten_current[1]
+
+        is_same_row = unflatten_available[0] == unflatten_current[0] 
+        is_same_col = unflatten_available[1] == unflatten_current[1] 
+        # Each Z layer should contain ranges between (0, x*y - 1) 
+        
+        # Find the layer the cell is in, and eliminate everything out of that that is not directly + or - 25
+        is_same_layer = None
+        
         row_col_mask = is_same_row | is_same_col
         # Combine the two masks
         mask = mask & row_col_mask
@@ -441,7 +483,7 @@ class RandomWalkGenerator(Generator):
         """Returns list of cells that can be stepped into from the input cell's position.
 
         Given a cell and the grid of the board, see which adjacent cells are available to move to
-        (i.e. are currently unoccupied) to avoid stepping over exisitng wires.
+        (i.e. are currently unoccupied) to avoid stepping over existing wires.
 
         Args:
             grid: the current layout of the board i.e. current grid.
@@ -586,3 +628,7 @@ class RandomWalkGenerator(Generator):
         solved_grid = solved_grid.at[heads].set(agent_position_values)
         solved_grid = solved_grid.at[targets].set(agent_target_values)
         return solved_grid
+
+
+if __name__ == "__main__":
+    gen = UniformRandomGenerator(grid_size=(5,5,2), num_agents=3)

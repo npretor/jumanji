@@ -38,8 +38,11 @@ def test_uniform_random_generator__call(
     """Test that generator generates valid boards."""
     state = uniform_random_generator(key)
 
-    assert state.grid.shape == (5, 5, 2)
-    assert state.agents.position.shape == state.agents.target.shape == (3, 2)
+    assert state.grid.shape == (2, 5, 5)
+    assert state.agents.position.shape == state.agents.target.shape == (3, 3)
+
+    # axis indexing is z, y, x, with the y axis inverted like when using opencv
+    # the state.agent.positions is incorrectly showing agent locations 
 
     # Check grid has head and target for each agent
     # and the starts and ends point to the correct heads and targets, respectively
@@ -63,100 +66,142 @@ def test_uniform_random_generator__no_retrace(
 
 
 ### grids for testing
-empty_grid = jnp.zeros((5, 5, 2))
+empty_grid = jnp.zeros((2, 5, 5))
 valid_starting_grid = jnp.array(
-    [[
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [2, 0, 0, 0, 5],
-        [0, 0, 0, 0, 0],
-        [0, 0, 8, 0, 0],
-    ],
-    [
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 5],
-        [0, 0, 0, 0, 0],
-        [0, 0, 8, 0, 0],
-    ]],    
+    [  
+        [
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [2, 0, 0, 0, 5],
+            [0, 0, 0, 0, 0],
+            [0, 0, 8, 0, 0],
+        ],
+        [
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 5],
+            [0, 0, 0, 0, 0],
+            [0, 0, 8, 0, 0],
+        ]
+    ],    
     dtype=jnp.int32,
 )
 valid_starting_grid_after_1_step = jnp.array(
-    [[
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [1, 2, 0, 0, 0],
-        [0, 0, 8, 0, 0],
-        [0, 0, 7, 0, 0],
-    ],
     [
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 5, 4],
-        [0, 0, 8, 0, 0],
-        [0, 0, 7, 0, 0],
-    ]],    
+        [
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [1, 2, 0, 0, 0],
+            [0, 0, 8, 0, 0],
+            [0, 0, 7, 0, 0],
+        ],
+        [
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 5, 4],
+            [0, 0, 8, 0, 0],
+            [0, 0, 7, 0, 0],
+        ]
+    ],    
     dtype=jnp.int32,
 )
 valid_starting_grid_initialize_agents = jnp.array(
     [
-        [0.0, 0.0, 0.0, 0.0, 6.0],
-        [0.0, 0.0, 0.0, 0.0, 5.0],
-        [0.0, 3.0, 0.0, 0.0, 0.0],
-        [0.0, 2.0, 8.0, 9.0, 0.0],
-        [0.0, 0.0, 0.0, 0.0, 0.0],
-    ],
-    [
-        [0.0, 0.0, 0.0, 0.0, 0.0],
-        [0.0, 0.0, 0.0, 0.0, 0.0],
-        [0.0, 0.0, 0.0, 0.0, 0.0],
-        [0.0, 0.0, 0.0, 0.0, 0.0],
-        [0.0, 0.0, 0.0, 0.0, 0.0],
+        [
+            [0.0, 0.0, 0.0, 0.0, 6.0],
+            [0.0, 0.0, 0.0, 0.0, 5.0],
+            [0.0, 3.0, 0.0, 0.0, 0.0],
+            [0.0, 2.0, 8.0, 9.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0],
+        ],
+        [
+            [0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0],
+        ]
     ],    
     dtype=jnp.int32,
 )
 
 valid_solved_grid_1 = jnp.array(
     [
-        [1, 1, 1, 1, 2],
-        [4, 4, 4, 4, 4],
-        [7, 7, 7, 0, 5],
-        [7, 0, 7, 7, 7],
-        [7, 8, 0, 0, 7],
+        [
+            [1, 1, 1, 1, 2],
+            [4, 4, 4, 4, 4],
+            [7, 7, 7, 0, 5],
+            [7, 0, 7, 7, 7],
+            [7, 8, 0, 0, 7],
+        ],
+        [
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+        ]
     ],
     dtype=jnp.int32,
 )
 
 valid_training_grid = jnp.array(
     [
-        [0, 0, 0, 3, 8],
-        [2, 6, 0, 0, 0],
-        [0, 0, 9, 0, 0],
-        [0, 0, 5, 0, 0],
-        [0, 0, 0, 0, 0],
-    ],
+        [
+            [0, 0, 0, 3, 8],
+            [2, 6, 0, 0, 0],
+            [0, 0, 9, 0, 0],
+            [0, 0, 5, 0, 0],
+            [0, 0, 0, 0, 0],
+        ],
+        [
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+        ]
+    ],    
     dtype=jnp.int32,
 )
 
 valid_solved_grid_2 = jnp.array(
     [
-        [1, 1, 1, 3, 8],
-        [2, 6, 7, 7, 7],
-        [0, 4, 9, 0, 0],
-        [0, 4, 5, 0, 0],
-        [0, 0, 0, 0, 0],
-    ],
+        [
+            [1, 1, 1, 3, 8],
+            [2, 6, 7, 7, 7],
+            [0, 4, 9, 0, 0],
+            [0, 4, 5, 0, 0],
+            [0, 0, 0, 0, 0],
+        ],
+        [
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+        ]
+    ],    
     dtype=jnp.int32,
 )
 
 grid_to_test_available_cells = jnp.array(
     [
-        [1, 1, 1, 1, 2],
-        [4, 4, 4, 4, 5],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-    ],
+        [
+            [1, 1, 1, 1, 2],
+            [4, 4, 4, 4, 5],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+        ],
+        [
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+        ]
+    ],    
     dtype=jnp.int32,
 )
 grids_after_1_agent_step = jnp.array(
@@ -187,9 +232,9 @@ grids_after_1_agent_step = jnp.array(
 ### Agents for testing
 agents_finished = Agent(
     id=jnp.array([0, 1, 2]),
-    start=jnp.array([[2, 0], [2, 4], [4, 2]]),
-    target=jnp.array([[-1, -1], [-1, -1], [-1, -1]]),
-    position=jnp.array([[0, 4], [2, 4], [4, 1]]),
+    start=jnp.array([[2, 0, 0], [2, 4, 0], [4, 2, 0]]),
+    target=jnp.array([[-1, -1, 0], [-1, -1, 0], [-1, -1, 0]]),
+    position=jnp.array([[0, 4, 0], [2, 4, 0], [4, 1, 0]]),
 )
 agents_reshaped_for_generator = Agent(
     id=jnp.arange(3),
@@ -199,36 +244,36 @@ agents_reshaped_for_generator = Agent(
 )
 agents_starting = Agent(
     id=jnp.array([0, 1, 2]),
-    start=jnp.array([[2, 0], [2, 4], [4, 2]]),
-    target=jnp.array([[-1, -1], [-1, -1], [-1, -1]]),
-    position=jnp.array([[2, 0], [2, 4], [4, 2]]),
+    start=jnp.array([[2, 0, 0], [2, 4, 0], [4, 2, 0]]),
+    target=jnp.array([[-1, -1, 0], [-1, -1, 0], [-1, -1, 0]]),
+    position=jnp.array([[2, 0, 0], [2, 4, 0], [4, 2, 0]]),
 )
 
 agents_starting_initialise_agents = Agent(
     id=jnp.array([0, 1, 2]),
-    start=jnp.array([[2, 1], [0, 4], [3, 3]]),
-    target=jnp.array([[-1, -1], [-1, -1], [-1, -1]]),
-    position=jnp.array([[3, 1], [1, 4], [3, 2]]),
+    start=jnp.array([[2, 1, 0], [0, 4, 0], [3, 3, 0]]),
+    target=jnp.array([[-1, -1, 0], [-1, -1, 0], [-1, -1, 0]]),
+    position=jnp.array([[3, 1, 0], [1, 4, 0], [3, 2, 0]]),
 )
 agents_starting_move_after_1_step = Agent(
     id=jnp.array([0, 1, 2]),
-    start=jnp.array([[2, 0], [2, 4], [4, 2]]),
-    target=jnp.array([[-1, -1], [-1, -1], [-1, -1]]),
-    position=jnp.array([[2, 1], [2, 3], [3, 2]]),
+    start=jnp.array([[2, 0, 0], [2, 4, 0], [4, 2, 0]]),
+    target=jnp.array([[-1, -1, 0], [-1, -1, 0], [-1, -1, 0]]),
+    position=jnp.array([[2, 1, 0], [2, 3, 0], [3, 2, 0]]),
 )
 
 agents_starting_move_1_step_up = Agent(
     id=jnp.array([0, 1, 2]),
-    start=jnp.array([[2, 0], [2, 4], [4, 2]]),
-    target=jnp.array([[-1, -1], [-1, -1], [-1, -1]]),
-    position=jnp.array([[2, 1], [2, 3], [3, 2]]),
+    start=jnp.array([[2, 0, 0], [2, 4, 0], [4, 2, 0]]),
+    target=jnp.array([[-1, -1, 0], [-1, -1, 0], [-1, -1, 0]]),
+    position=jnp.array([[2, 1, 0], [2, 3, 0], [3, 2, 0]]),
 )
 
 generate_board_agents = Agent(
     id=jnp.array([0, 1, 2]),
-    start=jnp.array([[1, 0], [3, 2], [0, 4]]),
-    target=jnp.array([[0, 3], [1, 1], [2, 2]]),
-    position=jnp.array([[1, 0], [3, 2], [0, 4]]),
+    start=jnp.array([[1, 0, 0], [3, 2, 0], [0, 4, 0]]),
+    target=jnp.array([[0, 3, 0], [1, 1, 0], [2, 2, 0]]),
+    position=jnp.array([[1, 0, 0], [3, 2, 0], [0, 4, 0]]),
 )
 
 key = jax.random.PRNGKey(0)
@@ -240,7 +285,7 @@ class TestRandomWalkGenerator:
     @pytest.fixture
     def random_walk_generator(self) -> RandomWalkGenerator:
         """Creates a generator with grid size of 5 and 3 agents."""
-        return RandomWalkGenerator(grid_size=5, num_agents=3)
+        return RandomWalkGenerator(grid_size=(5,5,2), num_agents=3)
 
     def test_random_walk_generator__call(
         self,
@@ -250,8 +295,8 @@ class TestRandomWalkGenerator:
         """Tests that generator generates valid boards."""
         state = random_walk_generator(key)
 
-        assert state.grid.shape == (5, 5)
-        assert state.agents.position.shape == state.agents.target.shape == (3, 2)
+        assert state.grid.shape == (2, 5, 5)
+        assert state.agents.position.shape == state.agents.target.shape == (3, 3)
 
         # Check grid has head and target for each agent
         # and the starts and ends point to the correct heads and targets, respectively
