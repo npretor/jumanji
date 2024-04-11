@@ -102,6 +102,12 @@
 * generator
     - (TODO) UniformRandomGenerator 
     - (TODO) RandomWalkGenerator 
+        - (TODO) _no_available_cells 
+        - (TODO) _select_action 
+        - (TODO) _adjacent_cells 
+        - (TODO) _available_cells 
+        - (TODO) _is_cell_free 
+        - (TODO) _is_cell_doubling_back 
 
 * reward 
     - (TODO) RewardFn
