@@ -62,7 +62,7 @@ def get_agent_id(value: int) -> int:
     return 0 if value == 0 else (value - 1) // 3 + 1
 
 
-def move_position(position: chex.Array, action: jnp.int32) -> chex.Array:
+def move_position_OLD(position: chex.Array, action: chex.Array) -> chex.Array:
     """Use a position and an action to return a new position.
 
     Args:
@@ -71,23 +71,31 @@ def move_position(position: chex.Array, action: jnp.int32) -> chex.Array:
     Returns:
         The new position after the move.
     """
-    row, col, zloc = position
+    z, y, x = position
 
-    move_noop = lambda row, col, zloc: jnp.array([row, col, zloc], jnp.int32) 
-    move_left = lambda row, col, zloc: jnp.array([row, col - 1, zloc], jnp.int32) 
-    move_up = lambda row, col, zloc: jnp.array([row - 1, col, zloc], jnp.int32) 
-    move_right = lambda row, col, zloc: jnp.array([row, col + 1, zloc], jnp.int32) 
-    move_down = lambda row, col, zloc: jnp.array([row + 1, col, zloc], jnp.int32) 
-    move_zdown   = lambda row, col, zloc: jnp.array([row, col, zloc - 1], jnp.int32) 
-    move_zup   = lambda row, col, zloc: jnp.array([row, col, zloc + 1], jnp.int32) 
+    # import ipdb; ipdb.set_trace()
+    # jax.debug.print("POSITION: {position}",position=position)
+
+    move_noop   = lambda z, y, x: jnp.array([z, y, x], jnp.int32) 
+    move_left   = lambda z, y, x: jnp.array([z, y, x-1], jnp.int32) 
+    move_up     = lambda z, y, x: jnp.array([z, y+1, x], jnp.int32) 
+    move_right  = lambda z, y, x: jnp.array([z, y, x+1], jnp.int32) 
+    move_down   = lambda z, y, x: jnp.array([z, y-1, x], jnp.int32) 
+    move_zdown  = lambda z, y, x: jnp.array([z-1, y, x], jnp.int32) 
+    move_zup    = lambda z, y, x: jnp.array([z+1, y, x], jnp.int32) 
 
     return jax.lax.switch(
-        action, [move_noop, move_up, move_right, move_down, move_left, move_zdown, move_zup], row, col, zloc
+        action, [move_noop, move_up, move_right, move_down, move_left, move_zdown, move_zup], z, y, x
     )
+
+def move_position(position: chex.Array, action: chex.Array) -> chex.Array:
+    return position + action
 
 
 def move_agent(
-    agent: Agent, grid: chex.Array, new_pos: chex.Array
+    agent: Agent, 
+    grid: chex.Array, 
+    new_pos: chex.Array
 ) -> Tuple[Agent, chex.Array]:
     """Moves `agent` to `new_pos` on `grid`. Sets `agent`'s position to `new_pos`.
 
