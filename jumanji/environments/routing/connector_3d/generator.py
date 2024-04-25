@@ -209,8 +209,6 @@ class RandomWalkGenerator(Generator):
             self._continue_stepping, self._step, stepping_tuple   # condition, function, initial_values 
         )
 
-
-        
         # Convert heads and targets to format accepted by generator
         heads = agents.start.T
         targets = agents.position.T
@@ -225,7 +223,7 @@ class RandomWalkGenerator(Generator):
         agent_position_values = get_position(jnp.arange(self.num_agents))
         agent_target_values = get_target(jnp.arange(self.num_agents))
         # Populate an empty grid with heads and targets
-        grid = jnp.zeros((self.grid_size[0], self.grid_size[1], self.grid_size[2]), dtype=jnp.int32)
+        grid = jnp.zeros((z, y, x), dtype=jnp.int32)
         grid = grid.at[tuple(agents.start.T)].set(agent_position_values)
         grid = grid.at[tuple(agents.target.T)].set(agent_target_values)
         return solved_grid, agents, grid
@@ -252,7 +250,7 @@ class RandomWalkGenerator(Generator):
         """
         agent_ids = jnp.arange(self.num_agents)
         keys = jax.random.split(key, num=self.num_agents)
-
+        
         # Randomly select action for each agent
         actions = jax.vmap(self._select_action, in_axes=(0, None, 0))(
             keys, grid, agents
@@ -262,7 +260,6 @@ class RandomWalkGenerator(Generator):
         new_agents, grids = jax.vmap(self._step_agent, in_axes=(0, None, 0))(
             agents, grid, actions
         )
-
 
         # Get grids with only values related to a single agent.
         # For example: remove all other agents from agent 1's grid. Do this for all agents.
@@ -343,7 +340,6 @@ class RandomWalkGenerator(Generator):
         key, next_key = jax.random.split(key)
         grid_mask = grid == 0 
         
-        # jax.debug.print("🤯 {grid} 🤯", grid=grid)
         start_coordinate_flat = jax.random.choice(
             key=key,
             a=jnp.arange(x*y*z),
@@ -386,6 +382,7 @@ class RandomWalkGenerator(Generator):
     ) -> chex.Array:
         """Determines if agents can continue taking steps."""
         _, grid, agents = stepping_tuple
+
         dones = jax.vmap(self._no_available_cells, in_axes=(None, 0))(grid, agents)
         return ~dones.all()
 
@@ -423,8 +420,9 @@ class RandomWalkGenerator(Generator):
         )
         step_coordinate = available_cells[step_coordinate_index]
 
-        action = self._action_from_positions(agent.position, step_coordinate)
-        return action
+        # action = self._action_from_positions(agent.position, step_coordinate)
+        # return action
+        return step_coordinate - agent.position 
 
     def _init_conversion_table(self):
         """Initializes the lookup table for flat-to-3D conversions"""
@@ -615,7 +613,7 @@ class RandomWalkGenerator(Generator):
         self,
         agent: Agent,
         grid: chex.Array,
-        action: int,
+        action: chex.Array,
     ) -> Tuple[Agent, chex.Array]:
         """Moves the agent according to the given action if it is possible.
 
@@ -624,12 +622,13 @@ class RandomWalkGenerator(Generator):
         Returns:
             Tuple of (agent, grid) after having applied the given action.
         """
-        new_pos = move_position(agent.position, action)
+        # new_pos = move_position(agent.position, action)
+        new_pos = agent.position + action 
 
         new_agent, new_grid = jax.lax.cond(
-            self._is_valid_position(grid, agent, new_pos) & (action != NOOP),
-            move_agent,
-            lambda *_: (agent, grid),
+            self._is_valid_position(grid, agent, new_pos) & jnp.all(action != jnp.array([0,0,0])),
+            move_agent,                     # True
+            lambda *_: (agent, grid),       # False 
             agent,
             grid,
             new_pos,
@@ -659,13 +658,13 @@ class RandomWalkGenerator(Generator):
         Returns:
             bool: True if the agent moving to position is valid.
         """
-        x_bound, y_bound, z_bound = self.grid_size 
+        z_bound, y_bound, x_bound = self.grid_size 
         z, y, x = position 
 
         # Within the bounds of the grid
         in_bounds = (0 <= x) & (x < x_bound) & (0 <= y) & (y < y_bound) & (0 <= z) & (z < z_bound)
         # Cell is not occupied
-        open_cell = (grid[x, y, z] == EMPTY) | (grid[x, y, z] == get_target(agent.id))
+        open_cell = (grid[tuple(position)] == EMPTY) | (grid[tuple(position)] == get_target(agent.id))
         # Agent is not connected
         not_connected = ~agent.connected
 
